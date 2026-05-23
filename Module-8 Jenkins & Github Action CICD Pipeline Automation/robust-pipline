@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Cloning application source code') {
+            steps {
+                sh '''
+                    mkdir -p devops
+                    cd devops
+                    rm -rf Node.js-App-Deploy-Github-Action
+                    git clone -b main https://github.com/omkarsharma2821/Node.js-App-Deploy-Github-Action.git
+                '''
+                echo 'cloning done successfully'
+            }
+        }
+        stage('Building image'){
+            steps{
+                sh 'whoami'
+                sh '''
+                    cd devops/Node.js-App-Deploy-Github-Action
+                    docker build -t node-app .
+                '''
+                echo 'Image created successfully'
+            }
+        }
+        stage('deploying the app using container'){
+            steps{
+                sh '''
+                    docker rm -f node-app-container || true
+                    docker run -d --name node-app-container -p 8000:8080 node-app
+                '''
+                echo 'congratulation app is live on port 8000'
+            }
+        }
+    }
+}
