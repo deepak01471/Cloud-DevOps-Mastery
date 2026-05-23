@@ -1,5 +1,5 @@
 # Jenkins CI/CD Pipeline for a Dockerized Node.js Application: Manual Trigger vs Automatic Trigger Using GitHub Webhooks
-In this article, we will build and understand a complete CI/CD workflow using Jenkins, Docker, GitHub, and a Node.js application.
+Have you ever pushed code to GitHub and wished your application could automatically build and deploy itself without logging into a server or clicking a button in Jenkins? In this article, you'll learn how to build a complete CI/CD pipeline for a Dockerized Node.js application using Jenkins, starting with manual deployments and progressing to fully automated deployments using GitHub webhooks.
 
 We will cover:
 
@@ -16,9 +16,10 @@ We will cover:
 - Common errors and troubleshooting
 The goal is to understand not only how to configure everything but also why each component is needed.
 
----
+> Node.js Application Repo URL- https://github.com/omkarsharma2821/Node.js-App-Deploy-Github-Action
 
-# Architecture Overview
+
+## Architecture Overview
 The complete flow looks like this:
 
 ```text
@@ -72,9 +73,8 @@ Jenkins
     v
 Build and Deploy Automatically
 ```
----
 
-# Prerequisites
+## Prerequisites
 Before starting, ensure you have:
 
 - Ubuntu Server
@@ -90,9 +90,8 @@ jenkins --version
 docker --version
 git --version
 ```
----
 
-# Installing Docker on Jenkins Server
+## Installing Docker on Jenkins Server
 Install Docker:
 
 ```bash
@@ -110,9 +109,8 @@ Verify:
 ```bash
 docker --version
 ```
----
 
-# Allow Jenkins to Use Docker
+## Allow Jenkins to Use Docker
 By default Jenkins cannot execute Docker commands.
 
 Add Jenkins user to Docker group:
@@ -133,9 +131,8 @@ docker ps
 ```
 If Docker works without sudo, Jenkins is ready.
 
----
 
-# Creating the Pipeline
+## Creating the Pipeline
 Initially we created a Jenkins pipeline that manually clones the repository.
 
 Example:
@@ -181,9 +178,8 @@ This works, but every deployment requires manually clicking:
 ```text
 Build Now
 ```
----
 
-# Problem with Multiple Deployments
+## Problem with Multiple Deployments
 Suppose the application is already running.
 
 Running:
@@ -198,9 +194,8 @@ Error:
 ```text
 Bind for 0.0.0.0:8000 failed
 ```
----
 
-# Better Deployment Approach
+## Better Deployment Approach
 Before starting a new container, remove the old one.
 
 ```bash
@@ -211,9 +206,8 @@ Then start a new container:
 ```bash
 docker run -d --name node-app-container -p 8000:8080 node-app
 ```
----
 
-# Understanding docker rm -f node-app-container || true
+## Understanding docker rm -f node-app-container || true
 Let's break it down.
 
 ## docker rm
@@ -224,9 +218,8 @@ docker rm node-app-container
 ```
 Works only if container is stopped.
 
----
 
-## -f
+### -f
 Force remove.
 
 ```bash
@@ -236,9 +229,8 @@ This:
 
 1. Stops container
 2. Removes container
----
 
-## ||
+### ||
 OR operator.
 
 Syntax:
@@ -248,9 +240,8 @@ command1 || command2
 ```
 If command1 fails, command2 executes.
 
----
 
-## true
+### true
 Always returns success.
 
 ```bash
@@ -261,9 +252,8 @@ Exit code:
 ```text
 0
 ```
----
 
-## Final Meaning
+### Final Meaning
 ```bash
 docker rm -f node-app-container || true
 ```
@@ -279,9 +269,8 @@ Ignore error and continue
 ```
 This prevents Jenkins from failing.
 
----
 
-# Manual Triggering
+## Manual Triggering
 The simplest approach is manual execution.
 
 Navigate to:
@@ -299,9 +288,8 @@ Disadvantages:
 
 - Requires human intervention
 - Not real CI/CD
----
 
-# Automatic Triggering
+## Automatic Triggering
 The goal of CI/CD is:
 
 ```text
@@ -315,40 +303,65 @@ Automatic Deployment
 ```
 This is where GitHub webhooks come into play.
 
----
 
-# Required Jenkins Plugins
-Install the following plugins:
+## **Required Jenkins Plugins**
 
-## Git Plugin
-Allows Jenkins to work with Git repositories.
+Install the following Jenkins plugins before configuring the CI/CD pipeline:
 
-## GitHub Plugin
-Provides GitHub integration.
+### **1. Git Plugin**
+- Enables Jenkins to interact with Git repositories.
+- Allows Jenkins to clone repositories, fetch changes, and checkout specific branches.
+- Required for integrating Jenkins with GitHub repositories.
 
-## GitHub Integration Plugin
-Enables webhook-based triggering.
+### **2. GitHub Plugin**
+- Provides integration between Jenkins and GitHub.
+- Allows Jenkins to communicate with GitHub repositories and services.
+- Supports GitHub-related features within Jenkins.
 
-## Pipeline Plugin
-Allows Jenkinsfile execution.
+### **3. GitHub Integration Plugin**
+- Enables GitHub webhook support.
+- Allows Jenkins to automatically trigger builds when code is pushed to GitHub.
+- Essential for implementing automated CI/CD workflows.
 
-## Credentials Plugin
-Stores secrets securely.
+### **4. Pipeline Plugin**
+- Enables support for Jenkins Pipelines.
+- Allows execution of Jenkinsfiles written in Declarative or Scripted Pipeline syntax.
+- Required for defining CI/CD workflows as code.
 
----
+### **5. Credentials Plugin**
+- Provides secure storage for sensitive information.
+- Allows storing:
+  - GitHub Personal Access Tokens (PATs)
+  - Usernames and passwords
+  - SSH keys
+  - API tokens
+- Prevents hardcoding secrets in Jenkins jobs and pipelines.
 
-# GitHub Authentication
-Public repositories may clone without authentication.
+## **GitHub Authentication**
 
-Private repositories require authentication.
+When Jenkins needs to access a GitHub repository, authentication requirements depend on the repository type.
 
-GitHub no longer supports account passwords for Git operations.
+### **Public Repository**
+- Can typically be cloned without authentication.
 
-Use a Personal Access Token.
+Example:
 
----
+```bash
+git clone https://github.com/username/repository.git
+```
 
-# Classic Personal Access Token
+### **Private Repository**
+- Requires authentication.
+- GitHub no longer supports account passwords for Git operations.
+- A Personal Access Token (PAT) must be used instead of a password.
+
+### **Why Use a Personal Access Token (PAT)?**
+- More secure than passwords.
+- Allows granular permission control.
+- Can be revoked without affecting your GitHub account password.
+- Recommended by GitHub for all Git operations requiring authentication.
+
+## Classic Personal Access Token
 Older token type.
 
 Advantages:
@@ -366,9 +379,8 @@ repo
 workflow
 admin:repo_hook
 ```
----
 
-# Fine-Grained Personal Access Token
+## Fine-Grained Personal Access Token
 Newer and recommended approach.
 
 Advantages:
@@ -389,9 +401,8 @@ Contents: Read and Write
 Metadata: Read
 Webhooks: Read and Write
 ```
----
 
-# Fine-Grained vs Classic Token
+## Fine-Grained vs Classic Token
 | Feature | Fine-Grained | Classic |
 | ----- | ----- | ----- |
 | Security | High | Lower |
@@ -400,9 +411,8 @@ Webhooks: Read and Write
 | Recommended | Yes | Legacy |
 For modern projects, prefer Fine-Grained tokens.
 
----
 
-# Adding GitHub Token to Jenkins
+## Adding GitHub Token to Jenkins
 Navigate to:
 
 ```text
@@ -438,9 +448,8 @@ github-creds
 ```
 Save.
 
----
 
-# Pipeline Script vs Pipeline Script from SCM
+## Pipeline Script vs Pipeline Script from SCM
 Many beginners get confused here.
 
 ## Pipeline Script
@@ -460,7 +469,6 @@ Disadvantages:
 
 - Not version controlled
 - Difficult to maintain
----
 
 ## Pipeline Script from SCM
 Pipeline stored in GitHub repository.
@@ -484,9 +492,8 @@ Advantages:
 - Easier maintenance
 Recommended approach.
 
----
 
-# Configuring Pipeline from SCM
+## Configuring Pipeline from SCM
 Create Jenkins job.
 
 Select:
@@ -521,9 +528,8 @@ Jenkinsfile
 ```
 Save.
 
----
 
-# Creating GitHub Webhook
+## Creating GitHub Webhook
 Navigate to:
 
 ```text
@@ -552,9 +558,8 @@ Just the push event
 ```
 Save webhook.
 
----
 
-# Configuring Jenkins Trigger
+## Configuring Jenkins Trigger
 Open job configuration.
 
 Under Build Triggers:
@@ -566,9 +571,8 @@ GitHub hook trigger for GITScm polling
 ```
 Save.
 
----
 
-# Testing the Webhook
+## Testing the Webhook
 Push code:
 
 ```bash
@@ -594,7 +598,7 @@ No manual click required.
 
 ---
 
-# Common Troubleshooting
+## Common Troubleshooting
 ## Webhook Returns 404
 Cause:
 
@@ -606,7 +610,6 @@ Correct:
 ```text
 http://SERVER-IP:8080/github-webhook/
 ```
----
 
 ## Webhook Returns 403
 Cause:
@@ -618,7 +621,6 @@ Verify:
 
 - GitHub plugin
 - GitHub integration plugin
----
 
 ## Webhook Returns 200 But Build Doesn't Start
 Common cause:
@@ -631,7 +633,6 @@ or
 ```text
 Repository mapping issue
 ```
----
 
 ## Dockerfile Not Found
 Example:
@@ -651,7 +652,6 @@ ls -la
 ```
 Verify Dockerfile location.
 
----
 
 ## Permission Denied While Running Docker
 Cause:
@@ -665,7 +665,6 @@ Fix:
 sudo usermod -aG docker jenkins
 sudo systemctl restart jenkins
 ```
----
 
 # Final Jenkinsfile
 ```groovy
@@ -693,7 +692,6 @@ pipeline {
     }
 }
 ```
----
 
 # Conclusion
 A Jenkins pipeline can be triggered manually or automatically. Manual triggering is useful for learning and testing, but real CI/CD begins when code pushes automatically trigger builds and deployments.
@@ -708,3 +706,7 @@ The recommended production approach is:
 6. Remove old containers before deploying new versions.
 With this setup, every code push automatically builds a Docker image, deploys a fresh container, and updates the application without requiring any manual intervention.
 
+---
+
+✍️ **Author**: *Omkar Sharma*  
+📬 *Feel free to connect on [LinkedIn](https://www.linkedin.com/in/omkarsharmaa/) or explore more on [GitHub](https://github.com/omkarsharma2821)*
