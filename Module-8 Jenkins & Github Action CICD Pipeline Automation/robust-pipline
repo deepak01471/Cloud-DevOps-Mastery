@@ -1,3 +1,4 @@
+// pipeline code if not using github webhook mannual trigger required
 pipeline {
     agent any
 
